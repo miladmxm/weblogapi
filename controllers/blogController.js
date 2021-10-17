@@ -11,7 +11,7 @@ exports.getIndex = async (req, res,next) => {
     const posts = await Blog.find({ status: "public" })
       .populate("user")
       .sort({ createAt: "desc" })
-    if(!posts){
+    if (!posts) {
       const error = new Error("هیچ پستی وجود ندارد در پایگاه داده")
       error.statusCode=404
       throw error
