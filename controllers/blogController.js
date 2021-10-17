@@ -27,7 +27,7 @@ exports.singlePost = async (req, res,next) => {
   try {
     const post = await Blog.findById(req.params.id).populate("user");
     if (!post) {
-      const error = new Error("کاربری با این شناسه یافت نشد");
+      const error = new Error("پستی با این شناسه یافت نشد");
       error.statusCode=404
       throw error
     }
