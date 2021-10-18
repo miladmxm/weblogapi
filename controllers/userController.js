@@ -1,28 +1,49 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const fetch = require("node-fetch");
 const User = require("../models/user");
 const { sendEmail } = require("../utils/mailer");
 
 exports.loginHandler = async (req, res, next) => {
-  const { email, password } = req.body;
+
+  const { email, password, grecaptcharesponse } = req.body;
+  const secretKey = process.env.CAPTCHA_SECRET;
+  const verifyUrl = `https://google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${grecaptcharesponse}
+    &remoteip=${req.connection.remoteAddress}`;
+
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      const error = new Error("ایمیل یا کلمه عبور صحیح نیست");
-      error.statusCode = 422;
-      throw error;
-    }
-    const isEcual = await bcrypt.compare(password, user.password);
-    if (!isEcual) {
-      const error = new Error("ایمیل یا کلمه عبور صحیح نیست");
-      error.statusCode = 422;
-      throw error;
+    const response = await fetch(verifyUrl, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+      }
+    });
+    const json = await response.json();
+    if (json.success) {
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        const error = new Error("ایمیل یا کلمه عبور صحیح نیست");
+        error.statusCode = 422;
+        throw error;
+      }
+      const isEcual = await bcrypt.compare(password, user.password);
+      if (!isEcual) {
+        const error = new Error("ایمیل یا کلمه عبور صحیح نیست");
+        error.statusCode = 422;
+        throw error;
+      } else {
+        const token = jwt.sign(
+          { user: { userId: user._id.toString(), fullname: user.fullname, email: user.email } },
+          process.env.JWT_SECRET
+        );
+        res.status(200).json({ token, userId: user._id.toString() });
+      }
     } else {
-      const token = jwt.sign(
-        {user: {userId: user._id.toString(), fullname: user.fullname, email: user.email} },
-        process.env.JWT_SECRET
-      );
-      res.status(200).json({ token, userId: user._id.toString() });
+      const error = new Error("کپچا به درستی تایید نشده است");
+      error.statusCode = 422;
+      throw error;
     }
   } catch (err) {
     next(err);
@@ -100,7 +121,7 @@ exports.handleForgetPass = async (req, res, next) => {
   }
 };
 
-exports.handleResetPass = async (req, res,next) => {
+exports.handleResetPass = async (req, res, next) => {
   const token = req.params.token;
   let decodedToken;
   const { password, repassword } = req.body;
@@ -127,7 +148,7 @@ exports.handleResetPass = async (req, res,next) => {
     }
     user.password = password;
     await user.save();
-    res.status(200).json({message:"کلمه عبور با موفقیت تغییر کرد"})
+    res.status(200).json({ message: "کلمه عبور با موفقیت تغییر کرد" })
   } catch (err) {
     next(err)
   }
