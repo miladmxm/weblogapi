@@ -59,7 +59,6 @@ exports.registerHandler = async (req, res, next) => {
     }
   } catch (err) {
     const errors = [];
-    console.log(err.inner);
     if (err.name === "ValidationError") {
       err.inner.forEach((e) => {
         errors.push({ message: e.message, fildname: e.path });
