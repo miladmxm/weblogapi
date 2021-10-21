@@ -6,7 +6,7 @@ const { sendEmail } = require("../utils/mailer");
 
 exports.loginHandler = async (req, res, next) => {
 
-  const { email, password, grecaptcharesponse } = req.body;
+  const { email, password, reMember , grecaptcharesponse } = req.body;
   const secretKey = process.env.CAPTCHA_SECRET;
   const verifyUrl = `https://google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${grecaptcharesponse}
     &remoteip=${req.connection.remoteAddress}`;
@@ -36,7 +36,9 @@ exports.loginHandler = async (req, res, next) => {
       } else {
         const token = jwt.sign(
           { user: { userId: user._id.toString(), fullname: user.fullname, email: user.email } },
-          process.env.JWT_SECRET
+          process.env.JWT_SECRET,{
+            expiresIn: +reMember?"72h":"2h",
+          }
         );
         res.status(200).json({ token, userId: user._id.toString() });
       }
