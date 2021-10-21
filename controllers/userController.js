@@ -35,7 +35,7 @@ exports.loginHandler = async (req, res, next) => {
         throw error;
       } else {
         const token = jwt.sign(
-          { user: { userId: user._id.toString(), fullname: user.fullname, email: user.email } },
+          { user: { userId: user._id.toString(), fullname: user.fullname, email: user.email,date:Date.now() } },
           process.env.JWT_SECRET,{
             expiresIn: +reMember?"72h":"2h",
           }
