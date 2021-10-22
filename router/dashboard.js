@@ -4,6 +4,11 @@ const {authenticated} = require('../middlewares/auth');
 const router = new Router()
 
 
+
+// @desc get all posts
+// @desc get /dashboard/
+router.get('/',authenticated,adminController.getPost)
+
 // @desc delete post page and handler
 // @desc get /dashboard/delete-post/3546354asdfsdh52
 router.delete('/delete-post/:id',authenticated,adminController.deletePost)

@@ -7,6 +7,24 @@ const Blog = require("../models/blog");
 const User = require("../models/user");
 const { fullDate } = require("../utils/fullDate");
 
+
+exports.getPost = async (req, res, next) => {
+  try {
+    const numberOfPost = await Blog.find({ user: req.userId }).countDocuments();
+    const posts = await Blog.find({ user: req.userId })
+      .sort({ createAt: "desc" })
+    if (!posts) {
+      const error = new Error("هیچ پستی وجود ندارد در پایگاه داده")
+      error.statusCode = 404
+      throw error
+    }
+    res.status(200).json({ posts, total: numberOfPost })
+
+  } catch (err) {
+    next(err)
+  }
+}
+
 exports.createPost = async (req, res, next) => {
   const thumbnail = req.files ? req.files.thumbnail : {};
   const fileName = `${fullDate()}_${thumbnail.name}`;
