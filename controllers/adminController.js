@@ -184,3 +184,26 @@ exports.uploadImage = async (req, res, next) => {
     next(err);
   }
 };
+
+
+exports.getAllImgUser=async(req,res)=>{
+  const email = req.params.email
+  console.log(email);
+  const allFile = []
+  fs.readdir(`${appRoot}/public/uploads/image/${email}/`, (err, files) => {
+    if(err){
+      res.status(400).json({message:"مشکلی در گرفتن تصاویر وجود دارد یا ایمیل شما اشتباه است"})
+    }
+    files.forEach(file => {
+      allFile.push(file)
+    });
+    res.status(200).json(allFile.sort(
+      function(a, b){
+        if(a.firstname > b.firstname) { return -1; }
+        if(a.firstname < b.firstname) { return 1; }
+        return 0;
+    }
+    ))
+  });
+
+}

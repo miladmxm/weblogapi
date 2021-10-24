@@ -25,6 +25,9 @@ router.post('/add-post',authenticated,adminController.createPost)
 // @desc post /dashboard/image-upload
 router.post('/image-upload',authenticated,adminController.uploadImage)
 
+// @desc image upload
+// @desc post /dashboard/image-upload
+router.get('/all-image-user/:email',authenticated,adminController.getAllImgUser)
 
 
 module.exports = router
