@@ -7,7 +7,7 @@ const router = new Router()
 
 // @desc get all posts
 // @desc get /dashboard/
-router.get('/',authenticated,adminController.getPost)
+router.get('/:id',authenticated,adminController.getPost)
 
 // @desc delete post page and handler
 // @desc get /dashboard/delete-post/3546354asdfsdh52

@@ -9,9 +9,10 @@ const { fullDate } = require("../utils/fullDate");
 
 
 exports.getPost = async (req, res, next) => {
+  const id = req.params.id
   try {
-    const numberOfPost = await Blog.find({ user: req.userId }).countDocuments();
-    const posts = await Blog.find({ user: req.userId })
+    const numberOfPost = await Blog.find({ user: id }).countDocuments();
+    const posts = await Blog.find({ user: id })
       .sort({ createAt: "desc" })
     if (!posts) {
       const error = new Error("هیچ پستی وجود ندارد در پایگاه داده")
