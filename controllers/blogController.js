@@ -25,7 +25,7 @@ exports.getIndex = async (req, res,next) => {
 
 exports.singlePost = async (req, res,next) => {
   try {
-    const post = await Blog.findById(req.params.id).populate("user");
+    const post = await Blog.findOne({_id:req.params.id,status:"public"}).populate("user");
     if (!post) {
       const error = new Error("پستی با این شناسه یافت نشد");
       error.statusCode=404

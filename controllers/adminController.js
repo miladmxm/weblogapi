@@ -128,6 +128,7 @@ exports.editPost = async (req, res, next) => {
 };
 
 exports.deletePost = async (req, res, next) => {
+  console.log('dadaaaaaaaaa'+req.params.id);
   try {
     const post = await Blog.findOne({ _id: req.params.id });
     if (post && post.user.toString() == req.userId) {
