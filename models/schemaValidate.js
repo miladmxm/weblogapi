@@ -45,5 +45,4 @@ exports.addPostValidatorSchema = Yup.object().shape({
         size:Yup.number().max(4000000,'تصویر بند انگشتی نباید بیشتر از 4 مگابایت باشد'),
         mimetype:Yup.mixed().oneOf(['image/jpeg','image/png'],'تنها فرمت های jpeg یا png پشتیبانی می شود')
     })
-    
 })

@@ -46,12 +46,9 @@ blogShema.statics.contactValidator = function(body){
 
 blogShema.pre('save',function(next){
     const blog = this
-    console.log("sssssssssss"+blog.status);
     if(!blog.status){
         blog.status = 'public'
-    }
-    
-    console.log("sssssssssss"+blog.status);
+    }    
     next()
 })
 

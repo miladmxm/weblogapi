@@ -128,22 +128,22 @@ exports.editPost = async (req, res, next) => {
 };
 
 exports.deletePost = async (req, res, next) => {
-  console.log('dadaaaaaaaaa'+req.params.id);
   try {
     const post = await Blog.findOne({ _id: req.params.id });
     if (post && post.user.toString() == req.userId) {
       fs.unlink(
         `${appRoot}/public/uploads/thumbnails/${post.thumbnail}`,
-        (err) => {
+        async (err) => {
           if (err) {
             const error = new Error("مشکلی در حذف تصویر اصلی به وجود آمده");
             error.statusCode = 400;
             throw error;
+          }else{
+            await post.remove();
+            res.status(200).json({ message: `پست ${post.title} با موفقیت حذف شد` });
           }
         }
       );
-      await post.remove();
-      res.status(200).json({ message: `پست ${post.title} با موفقیت حذف شد` });
     } else {
       const error = new Error("پست مورد نظر شما پیدا نشد");
       error.statusCode = 404;
