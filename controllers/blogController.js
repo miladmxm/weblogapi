@@ -10,7 +10,7 @@ exports.getIndex = async (req, res,next) => {
     const numberOfPost = await Blog.find({ status: "public" }).countDocuments();
     const posts = await Blog.find({ status: "public" })
       .populate("user")
-      .sort({ createAt: "desc" })
+      .sort({ createdAt: "desc" })
     if (!posts) {
       const error = new Error("هیچ پستی وجود ندارد در پایگاه داده")
       error.statusCode=404

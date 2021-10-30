@@ -13,7 +13,7 @@ exports.getPost = async (req, res, next) => {
   try {
     const numberOfPost = await Blog.find({ user: id }).countDocuments();
     const posts = await Blog.find({ user: id })
-      .sort({ createAt: "desc" })
+      .sort({ createdAt: "desc" })
     if (!posts) {
       const error = new Error("هیچ پستی وجود ندارد در پایگاه داده")
       error.statusCode = 404
