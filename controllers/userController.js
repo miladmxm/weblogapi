@@ -95,6 +95,7 @@ exports.registerHandler = async (req, res, next) => {
 };
 
 exports.handleForgetPass = async (req, res, next) => {
+
   const { email } = req.body;
   try {
     const user = await User.findOne({ email });
@@ -113,7 +114,7 @@ exports.handleForgetPass = async (req, res, next) => {
       <div style="width:90%; margin:10px auto;">
       <h2 style='text-align:center'>سلام ${user.fullname}</h2>
       <p>شما برای تغییر رمز عبور خود اقدام کرده اید . <br> اگر قصد تغییر رمز را دارید از طریق لینک زیر اقدام کنید</p>
-      <a href="http://localhost:3000/users/reset-pass/${token}">تغییر رمز</a>
+      <a href="http://localhost:3000/reset-password/${token}">تغییر رمز</a>
       </div>
       `
     );

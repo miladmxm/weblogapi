@@ -41,7 +41,10 @@ exports.singlePost = async (req, res,next) => {
 
 
 exports.contactHandler = async (req, res,next) => {
-  const { email, fullname, subject, text  } = req.body;
+  const { email, fullname, subject, text,numCaptcha } = req.body;
+  if (CAPTCHA_PNG_NUM != numCaptcha) {
+    res.status(400).json({message:"کد امنیتی به درستی وارد نشده است"})
+  }
   try {
     await Blog.contactValidator(req.body);
     resevEmail(

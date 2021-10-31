@@ -15,8 +15,8 @@ router.post('/login',userController.loginHandler)
 router.post('/register',userController.registerHandler)
 
 
-// @desc forget password page
-// @desc get /users/forget-pass
+// @desc forget password handler
+// @desc post /users/forget-pass
 router.post('/forget-pass',userController.handleForgetPass)
 
 // @desc reset password handler
