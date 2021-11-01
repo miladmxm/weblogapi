@@ -189,7 +189,6 @@ exports.uploadImage = async (req, res, next) => {
 
 exports.getAllImgUser=async(req,res)=>{
   const email = req.params.email
-  console.log(email);
   const allFile = []
   fs.readdir(`${appRoot}/public/uploads/image/${email}/`, (err, files) => {
     if(err){
