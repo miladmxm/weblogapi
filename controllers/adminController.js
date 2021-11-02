@@ -194,16 +194,16 @@ exports.getAllImgUser=async(req,res)=>{
     if(err){
       res.status(400).json({message:"مشکلی در گرفتن تصاویر وجود دارد یا ایمیل شما اشتباه است"})
     }
-    files.forEach(file => {
-      allFile.push(file)
-    });
-    res.status(200).json(allFile.sort(
-      function(a, b){
-        if(a.firstname > b.firstname) { return -1; }
-        if(a.firstname < b.firstname) { return 1; }
-        return 0;
+    console.log('fileeeeeeeeeee ' + typeof(files));
+    if (typeof files != 'undefined') {
+      files.forEach(file => {
+        allFile.push(file)
+      });
+      res.status(200).json(allFile)
+    } else {
+      res.status(404).json({message:'تصویری موجود نیست'})
+      
     }
-    ))
   });
 
 }
