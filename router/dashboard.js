@@ -25,6 +25,10 @@ router.post('/add-post',authenticated,adminController.createPost)
 // @desc post /dashboard/image-upload
 router.post('/image-upload',authenticated,adminController.uploadImage)
 
+// @desc edit user
+// @desc put /dashboard/edit-user
+router.put('/edit-user',authenticated,adminController.editProfile)
+
 // @desc image upload
 // @desc post /dashboard/image-upload
 router.get('/all-image-user/:email',authenticated,adminController.getAllImgUser)

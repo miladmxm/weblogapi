@@ -10,20 +10,21 @@ const { sendEmail } = require("../utils/mailer");
 exports.loginHandler = async (req, res, next) => {
 
   const { email, password, reMember , grecaptcharesponse } = req.body;
-  const secretKey = process.env.CAPTCHA_SECRET;
-  const verifyUrl = `https://google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${grecaptcharesponse}
-    &remoteip=${req.connection.remoteAddress}`;
+  // const secretKey = process.env.CAPTCHA_SECRET;
+  // const verifyUrl = `https://google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${grecaptcharesponse}
+  //   &remoteip=${req.connection.remoteAddress}`;
 
   try {
-    const response = await fetch(verifyUrl, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
-      }
-    });
-    const json = await response.json();
-    if (json.success) {
+    // const response = await fetch(verifyUrl, {
+    //   method: "POST",
+    //   headers: {
+    //     Accept: "application/json",
+    //     "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+    //   }
+    // });
+    // const json = await response.json();
+    //json.success
+    if (true) {
 
       const user = await User.findOne({ email });
       if (!user) {
