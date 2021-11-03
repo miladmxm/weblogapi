@@ -278,3 +278,66 @@ exports.editProfile = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.deleteUserReq = async (req, res, next) => {
+  const { email, password } = req.body
+  try {
+    if (!email || !password) {
+      const error = new Error("ایمیل یا کلمه عبور وارد نشده است")
+      error.statusCode = 422;
+      throw error
+    }
+    const user = await User.findOne({ email })
+    if (user) {
+      const isEcual = await bcrypt.compare(password, user.password);
+      if (isEcual) {
+
+        const posts = await Blog.find({ user: user._id.toString() })
+        posts.map(f => {
+          fs.unlinkSync(`${appRoot}/public/uploads/thumbnails/${f.thumbnail}`);
+        })
+
+        await Blog.deleteMany({ user: user._id.toString() }, err => {
+          if (err) {
+            console.log(err);
+            const error = new Error('در حذف پست ها مشکلی رخ داد');
+            error.statusCode = 500;
+            throw Error
+          } 
+        })
+        fs.rmdir(`${appRoot}/public/uploads/image/${user.email}`, { recursive: true }, (err) => {
+          if (err) {
+            const error = new Error('در حذف تصاویر مشکلی رخ داد');
+            error.statusCode = 500;
+            throw Error
+          }
+        }
+        )
+        await User.deleteOne({ email }, err => {
+          if (err) {
+            console.log(err);
+            const error = new Error('مشکلی در حذف کاربر رخ داد');
+            error.statusCode = 500;
+            throw Error
+          } else {
+            res.status(200).json({message:'کاربر با موفقیت حذف شد'})
+          }
+        })
+
+      } else {
+        const error = new Error("ایمیل یا کلمه عبور وارد نشده است")
+        error.statusCode = 422;
+        throw error
+      }
+    } else {
+      const error = new Error("ایمیل یا کلمه عبور وارد نشده است")
+      error.statusCode = 422;
+      throw error
+    }
+  } catch (err) {
+    next(err)
+  }
+}
+exports.deleteUser = async (req, res, next) => {
+
+}

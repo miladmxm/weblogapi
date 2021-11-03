@@ -9,8 +9,8 @@ const router = new Router()
 // @desc get /dashboard/
 router.get('/:id',authenticated,adminController.getPost)
 
-// @desc delete post page and handler
-// @desc get /dashboard/delete-post/3546354asdfsdh52
+// @desc delete post handler
+// @desc delete /dashboard/delete-post/3546354asdfsdh52
 router.delete('/delete-post/:id',authenticated,adminController.deletePost)
 
 // @desc edit post handler
@@ -28,6 +28,10 @@ router.post('/image-upload',authenticated,adminController.uploadImage)
 // @desc edit user
 // @desc put /dashboard/edit-user
 router.put('/edit-user',authenticated,adminController.editProfile)
+
+// @desc delete user handler
+// @desc delete /dashboard/delete-user
+router.delete('/delete-user', authenticated, adminController.deleteUserReq)
 
 // @desc image upload
 // @desc post /dashboard/image-upload
