@@ -194,7 +194,6 @@ exports.getAllImgUser=async(req,res)=>{
     if(err){
       res.status(400).json({message:"مشکلی در گرفتن تصاویر وجود دارد یا ایمیل شما اشتباه است"})
     }
-    console.log('fileeeeeeeeeee ' + typeof(files));
     if (typeof files != 'undefined') {
       files.forEach(file => {
         allFile.push(file)

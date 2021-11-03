@@ -1,4 +1,7 @@
+const fs = require('fs');
+
 const jwt = require("jsonwebtoken");
+const appRoot = require("app-root-path");
 const bcrypt = require("bcryptjs");
 const fetch = require("node-fetch");
 const User = require("../models/user");
@@ -78,6 +81,12 @@ exports.registerHandler = async (req, res, next) => {
         </div>
       `
       );
+      const readUserUnicFolder = fs.existsSync(
+        `${appRoot}/public/uploads/image/${email}`
+      );
+      if (!readUserUnicFolder) {
+        fs.mkdirSync(`${appRoot}/public/uploads/image/${email}`);
+      }
       res.status(201).json({ message: "ثبت نام با موفقیت انجام شد" });
     }
   } catch (err) {
