@@ -26,6 +26,14 @@ const userSchema = new mongoose.Schema({
     profileImg:{
         type: String,
         default:'default'
+    },
+    bio:{
+        type: String,
+        default:''
+    },
+    skill:{
+        type: String,
+        default:''
     }
 })
 

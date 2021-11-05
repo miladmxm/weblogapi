@@ -3,7 +3,7 @@ const fs = require("fs");
 const appRoot = require("app-root-path");
 const sharp = require("sharp");
 const bcrypt = require("bcryptjs");
-
+const fetch = require("node-fetch");
 const Blog = require("../models/blog");
 const User = require("../models/user");
 const { fullDate } = require("../utils/fullDate");
@@ -210,10 +210,9 @@ exports.getAllImgUser = async (req, res) => {
 };
 
 exports.editProfile = async (req, res, next) => {
-  const { password, newPassword, newRePassword } = req.body;
-  console.log(password, newPassword, newRePassword);
+  const { password, newPassword, newRePassword, bio, skill } = req.body;
+
   const profileimg = req.files ? req.files.profile : false;
-  console.log(profileimg);
   try {
     const user = await User.findOne({ _id: req.userId });
     if (!user) {
@@ -230,7 +229,7 @@ exports.editProfile = async (req, res, next) => {
       const error = new Error("کلمه عبور صحیح نیست");
       error.statusCode = 422;
       throw error;
-    } else if (!profileimg && !newPassword) {
+    } else if (!profileimg && !newPassword && !bio && !skill) {
       res.status(400).json({
         message: "برای تنظیمات پروفایل خود حداقل یک مورد را تغییر دهید",
       });
@@ -272,6 +271,19 @@ exports.editProfile = async (req, res, next) => {
         throw error;
       }
     }
+
+    if (bio) {
+      if (bio.length > 5) {
+        user.bio = bio;
+      } else {
+        const error = new Error("بیوگرافی شما نباید کمتر از 5 کاراکتر باشد");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+    if (skill) {
+      user.skill = skill;
+    }
     await user.save();
     res.status(200).json({ message: "تغییرات با موفقیت ذخیره شد", data: user });
   } catch (err) {
@@ -280,58 +292,78 @@ exports.editProfile = async (req, res, next) => {
 };
 
 exports.deleteUserReq = async (req, res, next) => {
-  const { email, password } = req.body
+  const { email, password, grecaptcharesponse } = req.body
+  const secretKey = process.env.CAPTCHA_SECRET;
+  const verifyUrl = `https://google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${grecaptcharesponse}
+    &remoteip=${req.connection.remoteAddress}`;
+
+
   try {
-    if (!email || !password) {
-      const error = new Error("ایمیل یا کلمه عبور وارد نشده است")
-      error.statusCode = 422;
-      throw error
-    }
-    const user = await User.findOne({ email })
-    if (user) {
-      const isEcual = await bcrypt.compare(password, user.password);
-      if (isEcual) {
+    const response = await fetch(verifyUrl, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+      }
+    });
+    const json = await response.json();
 
-        const posts = await Blog.find({ user: user._id.toString() })
-        posts.map(f => {
-          fs.unlinkSync(`${appRoot}/public/uploads/thumbnails/${f.thumbnail}`);
-        })
+    if (json.success) {
+      if (!email || !password) {
+        const error = new Error("ایمیل یا کلمه عبور وارد نشده است")
+        error.statusCode = 422;
+        throw error
+      }
+      const user = await User.findOne({ email })
+      if (user) {
+        const isEcual = await bcrypt.compare(password, user.password);
+        if (isEcual) {
 
-        await Blog.deleteMany({ user: user._id.toString() }, err => {
-          if (err) {
-            console.log(err);
-            const error = new Error('در حذف پست ها مشکلی رخ داد');
-            error.statusCode = 500;
-            throw Error
-          } 
-        })
-        fs.rmdir(`${appRoot}/public/uploads/image/${user.email}`, { recursive: true }, (err) => {
-          if (err) {
-            const error = new Error('در حذف تصاویر مشکلی رخ داد');
-            error.statusCode = 500;
-            throw Error
+          const posts = await Blog.find({ user: user._id.toString() })
+          posts.map(f => {
+            fs.unlinkSync(`${appRoot}/public/uploads/thumbnails/${f.thumbnail}`);
+          })
+
+          await Blog.deleteMany({ user: user._id.toString() }, err => {
+            if (err) {
+              console.log(err);
+              const error = new Error('در حذف پست ها مشکلی رخ داد');
+              error.statusCode = 500;
+              throw Error
+            }
+          })
+          fs.rmdir(`${appRoot}/public/uploads/image/${user.email}`, { recursive: true }, (err) => {
+            if (err) {
+              const error = new Error('در حذف تصاویر مشکلی رخ داد');
+              error.statusCode = 500;
+              throw Error
+            }
           }
+          )
+          await User.deleteOne({ email }, err => {
+            if (err) {
+              console.log(err);
+              const error = new Error('مشکلی در حذف کاربر رخ داد');
+              error.statusCode = 500;
+              throw Error
+            } else {
+              res.status(200).json({ message: 'کاربر با موفقیت حذف شد' })
+            }
+          })
+
+        } else {
+          const error = new Error("ایمیل یا کلمه عبور وارد نشده است")
+          error.statusCode = 422;
+          throw error
         }
-        )
-        await User.deleteOne({ email }, err => {
-          if (err) {
-            console.log(err);
-            const error = new Error('مشکلی در حذف کاربر رخ داد');
-            error.statusCode = 500;
-            throw Error
-          } else {
-            res.status(200).json({message:'کاربر با موفقیت حذف شد'})
-          }
-        })
-
       } else {
         const error = new Error("ایمیل یا کلمه عبور وارد نشده است")
         error.statusCode = 422;
         throw error
       }
     } else {
-      const error = new Error("ایمیل یا کلمه عبور وارد نشده است")
-      error.statusCode = 422;
+      const error = new Error('کپچا به درستی تایید نشده است')
+      error.statusCode = 400
       throw error
     }
   } catch (err) {

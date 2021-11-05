@@ -31,7 +31,7 @@ router.put('/edit-user',authenticated,adminController.editProfile)
 
 // @desc delete user handler
 // @desc delete /dashboard/delete-user
-router.delete('/delete-user', authenticated, adminController.deleteUserReq)
+router.post('/delete-user/:token', authenticated, adminController.deleteUserReq)
 
 // @desc image upload
 // @desc post /dashboard/image-upload
