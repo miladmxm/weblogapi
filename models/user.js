@@ -34,6 +34,18 @@ const userSchema = new mongoose.Schema({
     skill:{
         type: String,
         default:''
+    },
+    emailAddress:{
+        type:String
+    },
+    whatsapp:{
+        type:String
+    },
+    instagram:{
+        type:String
+    },
+    phoneNumber:{
+        type:String
     }
 })
 

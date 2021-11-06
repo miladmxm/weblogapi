@@ -210,7 +210,9 @@ exports.getAllImgUser = async (req, res) => {
 };
 
 exports.editProfile = async (req, res, next) => {
-  const { password, newPassword, newRePassword, bio, skill } = req.body;
+  const { password, newPassword, newRePassword, bio, skill , social } = req.body;
+
+  const socialmedia = social.split(',')
 
   const profileimg = req.files ? req.files.profile : false;
   try {
@@ -229,7 +231,7 @@ exports.editProfile = async (req, res, next) => {
       const error = new Error("کلمه عبور صحیح نیست");
       error.statusCode = 422;
       throw error;
-    } else if (!profileimg && !newPassword && !bio && !skill) {
+    } else if (!profileimg && !newPassword && !bio && !skill && social.length <= 3) {
       res.status(400).json({
         message: "برای تنظیمات پروفایل خود حداقل یک مورد را تغییر دهید",
       });
@@ -283,6 +285,20 @@ exports.editProfile = async (req, res, next) => {
     }
     if (skill) {
       user.skill = skill;
+    }
+
+
+    if(socialmedia[0]){
+      user.emailAddress = socialmedia[0]
+    }
+    if(socialmedia[1]){
+      user.whatsapp=socialmedia[1]
+    }
+    if(socialmedia[2]){
+      user.instagram = socialmedia[2]
+    }
+    if(socialmedia[3]){
+      user.phoneNumber = socialmedia[3]
     }
     await user.save();
     res.status(200).json({ message: "تغییرات با موفقیت ذخیره شد", data: user });
