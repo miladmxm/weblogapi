@@ -99,10 +99,11 @@ exports.editPost = async (req, res, next) => {
         );
       }
 
-      const { title, body, status } = req.body;
+      const { title, body, status, category } = req.body;
       post.title = title;
       post.body = body;
       post.status = status;
+      post.category = category
       post.thumbnail = thumbnail.name ? fileName : post.thumbnail;
       await post.save();
       res.status(200).json({ message: "تغییرات با موفقیت انجام شد" });
@@ -210,7 +211,7 @@ exports.getAllImgUser = async (req, res) => {
 };
 
 exports.editProfile = async (req, res, next) => {
-  const { password, newPassword, newRePassword, bio, skill , social } = req.body;
+  const { password, newPassword, newRePassword, bio, skill, social } = req.body;
 
   const socialmedia = social.split(',')
 
@@ -288,16 +289,16 @@ exports.editProfile = async (req, res, next) => {
     }
 
 
-    if(socialmedia[0]){
+    if (socialmedia[0]) {
       user.emailAddress = socialmedia[0]
     }
-    if(socialmedia[1]){
-      user.whatsapp=socialmedia[1]
+    if (socialmedia[1]) {
+      user.whatsapp = socialmedia[1]
     }
-    if(socialmedia[2]){
+    if (socialmedia[2]) {
       user.instagram = socialmedia[2]
     }
-    if(socialmedia[3]){
+    if (socialmedia[3]) {
       user.phoneNumber = socialmedia[3]
     }
     await user.save();
