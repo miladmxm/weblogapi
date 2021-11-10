@@ -53,7 +53,7 @@ exports.contactHandler = async (req, res,next) => {
       <div style='width:90%; margin:10px auto; text-align:center;'>
         <h2>سلام میلاد یه پیام داری از طرف <b>${fullname}</b></h2>
         <p>متن پیام : <br> ${text}</p>
-        <a href='mail.${email}'>${email}</a>
+        <a href='mailto:${email}'>${email}</a>
       </div>
     `
     );

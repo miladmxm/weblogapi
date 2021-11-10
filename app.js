@@ -4,6 +4,7 @@ const express = require('express');
 const fileUpload = require('express-fileupload');
 const mongoose = require('mongoose');
 const dotEnv = require('dotenv');
+const helmet = require('helmet');
 
 const {errorHandler} = require('./middlewares/errorHandler');
 const { setHeaders } = require('./middlewares/headers');
@@ -14,7 +15,7 @@ dotEnv.config({path:"./config/config.env"})
 
 
 const app = express()
-
+app.use(helmet());
 // body parser
 app.use(express.urlencoded({extended:false}))
 app.use(express.json())

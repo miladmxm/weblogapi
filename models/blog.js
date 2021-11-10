@@ -50,6 +50,7 @@ blogShema.statics.contactValidator = function(body){
 
 blogShema.pre('save',function(next){
     const blog = this
+    blog.title = blog.title.replace(/[^a-zA-Zا-ی0-9 ]/g, "");
     if(!blog.status){
         blog.status = 'public'
     }    
