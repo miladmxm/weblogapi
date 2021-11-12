@@ -1,6 +1,7 @@
 const fs = require("fs");
 
 const appRoot = require("app-root-path");
+const jwt = require("jsonwebtoken");
 const sharp = require("sharp");
 const bcrypt = require("bcryptjs");
 const fetch = require("node-fetch");
@@ -11,8 +12,18 @@ const { fullDate } = require("../utils/fullDate");
 exports.getPost = async (req, res, next) => {
   const id = req.params.id;
   try {
-    const numberOfPost = await Blog.find({ user: id }).countDocuments();
-    const posts = await Blog.find({ user: id }).sort({ createdAt: "desc" });
+    const isAdmin = await User.findOne({ _id: id, isAdmin: true });
+    let numberOfPost,posts
+    
+    if (isAdmin) {
+       numberOfPost = await Blog.find().countDocuments();
+       posts = await Blog.find().sort({ createdAt: "desc" });
+      
+    } else {
+       numberOfPost = await Blog.find({ user: id }).countDocuments();
+       posts = await Blog.find({ user: id }).sort({ createdAt: "desc" });
+      
+    }
     if (!posts) {
       const error = new Error("هیچ پستی وجود ندارد در پایگاه داده");
       error.statusCode = 404;
@@ -60,6 +71,8 @@ exports.editPost = async (req, res, next) => {
   const thumbnail = req.files ? req.files.thumbnail : {};
   const fileName = `${fullDate()}_${thumbnail.name}`;
   const uploadPath = `${appRoot}/public/uploads/thumbnails/${fileName}`;
+  const isAdmin = await User.findOne({ _id: req.userId, isAdmin: true });
+  console.log(isAdmin);
   const post = await Blog.findOne({ _id: req.params.id });
   try {
     if (thumbnail.name) await Blog.postValidation({ ...req.body, thumbnail });
@@ -70,7 +83,7 @@ exports.editPost = async (req, res, next) => {
       });
     }
 
-    if (post && post.user.toString() == req.userId) {
+    if (post && post.user.toString() === req.userId ||post && req.userId === isAdmin._id.toString() ) {
       if (thumbnail.name) {
         fs.unlink(
           `${appRoot}/public/uploads/thumbnails/${post.thumbnail}`,
@@ -302,7 +315,14 @@ exports.editProfile = async (req, res, next) => {
       user.phoneNumber = socialmedia[3]
     }
     await user.save();
-    res.status(200).json({ message: "تغییرات با موفقیت ذخیره شد", data: user });
+
+    const token = jwt.sign(
+      { user: { userId: user._id.toString(), fullname: user.fullname, email: user.email, profileImg:user.profileImg,bio:user.bio,skill:user.skill,instagram:user.instagram,whatsapp:user.whatsapp,emailAddress:user.emailAddress,phoneNumber:user.phoneNumber,dadashami:user.isAdmin?"dada":"nadada"} },
+      process.env.JWT_SECRET,{
+        expiresIn: "2h"
+      }
+    );
+    res.status(200).json({ token, userId: user._id.toString() });
   } catch (err) {
     next(err);
   }

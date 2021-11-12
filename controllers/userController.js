@@ -39,7 +39,7 @@ exports.loginHandler = async (req, res, next) => {
         throw error;
       } else {
         const token = jwt.sign(
-          { user: { userId: user._id.toString(), fullname: user.fullname, email: user.email, profileImg:user.profileImg,bio:user.bio,skill:user.skill,instagram:user.instagram,whatsapp:user.whatsapp,emailAddress:user.emailAddress,phoneNumber:user.phoneNumber} },
+          { user: { userId: user._id.toString(), fullname: user.fullname, email: user.email, profileImg:user.profileImg,bio:user.bio,skill:user.skill,instagram:user.instagram,whatsapp:user.whatsapp,emailAddress:user.emailAddress,phoneNumber:user.phoneNumber,dadashami:user.isAdmin?"dada":"nadada"} },
           process.env.JWT_SECRET,{
             expiresIn: +reMember?"72h":"2h",
           }
@@ -60,17 +60,36 @@ exports.registerHandler = async (req, res, next) => {
   try {
     await User.userValidation(req.body);
     const { fullname, email, password } = req.body;
+
+    const numberOfUser = await User.find().countDocuments();
+
     const user = await User.findOne({ email });
+
     if (user) {
       const error = new Error("ایمیل وارد شده قبلا ثبت نام کرده است");
       error.statusCode = 400;
       throw error;
-    } else {
-      await User.create({
+    } 
+
+    let userInfo = {};
+    if (numberOfUser == 0) {
+      userInfo = {
         fullname,
         email,
         password,
-      });
+        isAdmin:true
+      }
+    } else {
+      userInfo = {
+        fullname,
+        email,
+        password,
+        isAdmin:false
+      }
+    }
+    
+   
+      await User.create(userInfo);
       sendEmail(
         email,
         "ثبت نام موفقیت آمیز بود",
@@ -89,7 +108,7 @@ exports.registerHandler = async (req, res, next) => {
         fs.mkdirSync(`${appRoot}/public/uploads/image/${email}`);
       }
       res.status(201).json({ message: "ثبت نام با موفقیت انجام شد" });
-    }
+    
   } catch (err) {
     const errors = [];
     if (err.name === "ValidationError") {
