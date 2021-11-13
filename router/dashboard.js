@@ -37,5 +37,9 @@ router.post('/delete-user/:token', authenticated, adminController.deleteUserReq)
 // @desc post /dashboard/image-upload
 router.get('/all-image-user/:email',authenticated,adminController.getAllImgUser)
 
+// @desc image upload
+// @desc post /dashboard/image-upload
+router.get('/get-all-user',authenticated,adminController.getAllUsers)
+
 
 module.exports = router

@@ -17,7 +17,7 @@ exports.getPost = async (req, res, next) => {
     
     if (isAdmin) {
        numberOfPost = await Blog.find().countDocuments();
-       posts = await Blog.find().sort({ createdAt: "desc" });
+       posts = await Blog.find().sort({ createdAt: "desc" }).populate("user");
       
     } else {
        numberOfPost = await Blog.find({ user: id }).countDocuments();
@@ -34,6 +34,22 @@ exports.getPost = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.getAllUsers = async (req, res, next) => {
+  try {
+    const isAdmin = await User.findOne({ _id:req.userId, isAdmin: true });
+    if(isAdmin){
+      const allUser = await User.find()
+      res.status(200).json({ allUser });
+    }else{
+      const error = new Error("شما مجوز استفاده از این بخش را ندارید");
+        error.statusCode = 428;
+        throw error;
+    }
+  } catch (err) {
+    next(err);
+  }
+}
 
 exports.createPost = async (req, res, next) => {
   const thumbnail = req.files ? req.files.thumbnail : {};
