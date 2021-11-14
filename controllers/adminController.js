@@ -13,16 +13,23 @@ exports.getPost = async (req, res, next) => {
   const id = req.params.id;
   try {
     const isAdmin = await User.findOne({ _id: id, isAdmin: true });
-    let numberOfPost,posts
-    
+    let numberOfPost, posts
+
     if (isAdmin) {
-       numberOfPost = await Blog.find().countDocuments();
-       posts = await Blog.find().sort({ createdAt: "desc" }).populate("user");
-      
+      numberOfPost = await Blog.find().countDocuments();
+      posts = await Blog.find().sort({ createdAt: "desc" }).populate("user");
+
     } else {
-       numberOfPost = await Blog.find({ user: id }).countDocuments();
-       posts = await Blog.find({ user: id }).sort({ createdAt: "desc" });
-      
+      const user = await User.findOne({ _id: id });
+      if (user) {
+        numberOfPost = await Blog.find({ user: id }).countDocuments();
+        posts = await Blog.find({ user: id }).sort({ createdAt: "desc" });
+
+      } else {
+        const error = new Error('کاربری یافت نشد')
+        error.statusCode = 401;
+        throw error
+      }
     }
     if (!posts) {
       const error = new Error("هیچ پستی وجود ندارد در پایگاه داده");
@@ -37,14 +44,16 @@ exports.getPost = async (req, res, next) => {
 
 exports.getAllUsers = async (req, res, next) => {
   try {
-    const isAdmin = await User.findOne({ _id:req.userId, isAdmin: true });
-    if(isAdmin){
+    const isAdmin = await User.findOne({ _id: req.userId, isAdmin: true });
+    if (isAdmin) {
       const allUser = await User.find()
-      res.status(200).json({ allUser });
-    }else{
+      if (allUser) {
+        res.status(200).json({ allUser });
+      }
+    } else {
       const error = new Error("شما مجوز استفاده از این بخش را ندارید");
-        error.statusCode = 428;
-        throw error;
+      error.statusCode = 428;
+      throw error;
     }
   } catch (err) {
     next(err);
@@ -56,19 +65,26 @@ exports.createPost = async (req, res, next) => {
   const fileName = `${fullDate()}_${thumbnail.name}`;
   const uploadPath = `${appRoot}/public/uploads/thumbnails/${fileName}`;
   try {
-    req.body = { ...req.body, thumbnail: thumbnail };
+    const user = await User.findOne({ _id: req.userId });
+    if (user) {
+      req.body = { ...req.body, thumbnail: thumbnail };
 
-    await Blog.postValidation(req.body);
+      await Blog.postValidation(req.body);
 
-    await sharp(thumbnail.data)
-      .jpeg({
-        quality: 60,
-      })
-      .toFile(uploadPath)
-      .catch((err) => console.log(err));
+      await sharp(thumbnail.data)
+        .jpeg({
+          quality: 60,
+        })
+        .toFile(uploadPath)
+        .catch((err) => console.log(err));
 
-    await Blog.create({ ...req.body, user: req.userId, thumbnail: fileName });
-    res.status(201).json({ message: "پست با موفقیت ساخته شد" });
+      await Blog.create({ ...req.body, user: req.userId, thumbnail: fileName });
+      res.status(201).json({ message: "پست با موفقیت ساخته شد" });
+    } else {
+      const error = new Error('کاربری یافت نشد')
+      error.statusCode = 401;
+      throw error
+    }
   } catch (err) {
     const errors = [];
     if (err.name === "ValidationError") {
@@ -88,58 +104,65 @@ exports.editPost = async (req, res, next) => {
   const fileName = `${fullDate()}_${thumbnail.name}`;
   const uploadPath = `${appRoot}/public/uploads/thumbnails/${fileName}`;
   const isAdmin = await User.findOne({ _id: req.userId, isAdmin: true });
-  console.log(isAdmin);
+
   const post = await Blog.findOne({ _id: req.params.id });
   try {
-    if (thumbnail.name) await Blog.postValidation({ ...req.body, thumbnail });
-    else {
-      await Blog.postValidation({
-        ...req.body,
-        thumbnail: { name: "vs", size: 0, mimetype: "image/jpeg" },
-      });
-    }
-
-    if (post && post.user.toString() === req.userId ||post && req.userId === isAdmin._id.toString() ) {
-      if (thumbnail.name) {
-        fs.unlink(
-          `${appRoot}/public/uploads/thumbnails/${post.thumbnail}`,
-          async (err) => {
-            if (err) {
-              const error = new Error(
-                "مشکلی در جایگزین کردن تصویر اصلی به وجود آمد"
-              );
-              error.statusCode = 400;
-              throw error;
-            } else {
-              await sharp(thumbnail.data)
-                .jpeg({ quality: 60 })
-                .toFile(uploadPath)
-                .catch((err) => {
-                  if (err) {
-                    const error = new Error(
-                      "مشکلی در ذخیره تصویر اصلی جدید به وجود آمده"
-                    );
-                    error.statusCode = 400;
-                    throw error;
-                  }
-                });
-            }
-          }
-        );
+    const user = await User.findOne({ _id: req.userId });
+    if (user) {
+      if (thumbnail.name) await Blog.postValidation({ ...req.body, thumbnail });
+      else {
+        await Blog.postValidation({
+          ...req.body,
+          thumbnail: { name: "vs", size: 0, mimetype: "image/jpeg" },
+        });
       }
-
-      const { title, body, status, category } = req.body;
-      post.title = title;
-      post.body = body;
-      post.status = status;
-      post.category = category
-      post.thumbnail = thumbnail.name ? fileName : post.thumbnail;
-      await post.save();
-      res.status(200).json({ message: "تغییرات با موفقیت انجام شد" });
+  
+      if (post && post.user.toString() === req.userId || post && req.userId === isAdmin._id.toString()) {
+        if (thumbnail.name) {
+          fs.unlink(
+            `${appRoot}/public/uploads/thumbnails/${post.thumbnail}`,
+            async (err) => {
+              if (err) {
+                const error = new Error(
+                  "مشکلی در جایگزین کردن تصویر اصلی به وجود آمد"
+                );
+                error.statusCode = 400;
+                throw error;
+              } else {
+                await sharp(thumbnail.data)
+                  .jpeg({ quality: 60 })
+                  .toFile(uploadPath)
+                  .catch((err) => {
+                    if (err) {
+                      const error = new Error(
+                        "مشکلی در ذخیره تصویر اصلی جدید به وجود آمده"
+                      );
+                      error.statusCode = 400;
+                      throw error;
+                    }
+                  });
+              }
+            }
+          );
+        }
+  
+        const { title, body, status, category } = req.body;
+        post.title = title;
+        post.body = body;
+        post.status = status;
+        post.category = category
+        post.thumbnail = thumbnail.name ? fileName : post.thumbnail;
+        await post.save();
+        res.status(200).json({ message: "تغییرات با موفقیت انجام شد" });
+      } else {
+        const error = new Error("پست مورد نظر شما پیدا نشد");
+        error.statusCode = 404;
+        throw error;
+      }
     } else {
-      const error = new Error("پست مورد نظر شما پیدا نشد");
-      error.statusCode = 404;
-      throw error;
+      const error = new Error('کاربری یافت نشد')
+      error.statusCode = 401;
+      throw error
     }
   } catch (err) {
     const errors = [];
@@ -157,8 +180,15 @@ exports.editPost = async (req, res, next) => {
 
 exports.deletePost = async (req, res, next) => {
   try {
+    const isAdmin = await User.findOne({ _id: req.userId, isAdmin: true });
     const post = await Blog.findOne({ _id: req.params.id });
-    if (post && post.user.toString() == req.userId) {
+    const user = await User.findOne({ _id: req.userId });
+    if (!user) {
+      const error = new Error('کاربری یافت نشد')
+      error.statusCode = 401;
+      throw error
+    }
+    if (post && post.user.toString() == req.userId || post && isAdmin && req.userId === isAdmin._id.toString()) {
       fs.unlink(
         `${appRoot}/public/uploads/thumbnails/${post.thumbnail}`,
         async (err) => {
@@ -187,6 +217,11 @@ exports.deletePost = async (req, res, next) => {
 exports.uploadImage = async (req, res, next) => {
   try {
     const user = await User.findOne({ _id: req.userId });
+    if (!user) {
+      const error = new Error('کاربری یافت نشد')
+      error.statusCode = 401;
+      throw error
+    }
     const readUserUnicFolder = fs.existsSync(
       `${appRoot}/public/uploads/image/${user.email}`
     );
@@ -220,6 +255,11 @@ exports.uploadImage = async (req, res, next) => {
 };
 
 exports.getAllImgUser = async (req, res) => {
+  const user = await User.findOne({ _id: req.userId });
+
+    if (!user || user == null) {
+      return res.status(401).json({ message: "کاربری یافت نشد" });
+    }
   const email = req.params.email;
   const allFile = [];
   fs.readdir(`${appRoot}/public/uploads/image/${email}/`, (err, files) => {
@@ -241,13 +281,13 @@ exports.getAllImgUser = async (req, res) => {
 
 exports.editProfile = async (req, res, next) => {
   const { password, newPassword, newRePassword, bio, skill, social } = req.body;
-
+  const id = req.params.id
+  console.log(id);
   const socialmedia = social.split(',')
-
   const profileimg = req.files ? req.files.profile : false;
   try {
-    const user = await User.findOne({ _id: req.userId });
-    if (!user) {
+    const user = await User.findOne({ _id: id });
+    if (!user || user._id !== req.userId && user.isAdmin) {
       const error = new Error("کاربری با این شناسه وجود ندارد");
       error.statusCode = 400;
       throw error;
@@ -333,10 +373,10 @@ exports.editProfile = async (req, res, next) => {
     await user.save();
 
     const token = jwt.sign(
-      { user: { userId: user._id.toString(), fullname: user.fullname, email: user.email, profileImg:user.profileImg,bio:user.bio,skill:user.skill,instagram:user.instagram,whatsapp:user.whatsapp,emailAddress:user.emailAddress,phoneNumber:user.phoneNumber,dadashami:user.isAdmin?"dada":"nadada"} },
-      process.env.JWT_SECRET,{
-        expiresIn: "2h"
-      }
+      { user: { userId: user._id.toString(), fullname: user.fullname, email: user.email, profileImg: user.profileImg, bio: user.bio, skill: user.skill, instagram: user.instagram, whatsapp: user.whatsapp, emailAddress: user.emailAddress, phoneNumber: user.phoneNumber, dadashami: user.isAdmin ? "dada" : "nadada" } },
+      process.env.JWT_SECRET, {
+      expiresIn: "2h"
+    }
     );
     res.status(200).json({ token, userId: user._id.toString() });
   } catch (err) {
@@ -410,8 +450,8 @@ exports.deleteUserReq = async (req, res, next) => {
           throw error
         }
       } else {
-        const error = new Error("ایمیل یا کلمه عبور وارد نشده است")
-        error.statusCode = 422;
+        const error = new Error("کاربر پیدا نشد")
+        error.statusCode = 404;
         throw error
       }
     } else {
@@ -423,6 +463,60 @@ exports.deleteUserReq = async (req, res, next) => {
     next(err)
   }
 }
-exports.deleteUser = async (req, res, next) => {
+exports.deleteUserByAdmin = async (req, res, next) => {
+  const id = req.params.id;
+  try {
+    const isAdmin = await User.findOne({ _id: req.userId, isAdmin: true });
+    if (isAdmin && req.userId === isAdmin._id.toString()) {
+      const user = await User.findOne({ _id: id })
+      if (user) {
 
+
+        const posts = await Blog.find({ user: user._id.toString() })
+        posts.map(f => {
+          fs.unlinkSync(`${appRoot}/public/uploads/thumbnails/${f.thumbnail}`);
+        })
+
+        await Blog.deleteMany({ user: user._id.toString() }, err => {
+          if (err) {
+            console.log(err);
+            const error = new Error('در حذف پست ها مشکلی رخ داد');
+            error.statusCode = 500;
+            throw Error
+          }
+        })
+        fs.rmdir(`${appRoot}/public/uploads/image/${user.email}`, { recursive: true }, (err) => {
+          if (err) {
+            const error = new Error('در حذف تصاویر مشکلی رخ داد');
+            error.statusCode = 500;
+            throw Error
+          }
+        }
+        )
+        await User.deleteOne({ email: user.email }, err => {
+          if (err) {
+            console.log(err);
+            const error = new Error('مشکلی در حذف کاربر رخ داد');
+            error.statusCode = 500;
+            throw Error
+          } else {
+            res.status(200).json({ message: 'کاربر با موفقیت حذف شد' })
+          }
+        })
+
+      } else {
+        const error = new Error("کاربر پیدا نشد")
+        error.statusCode = 404;
+        throw error
+      }
+
+    } else {
+      const error = new Error("شما مجوز دسترسی به این بخش را ندارید")
+      error.statusCode = 422;
+      throw error
+    }
+
+  } catch (err) {
+    next(err)
+  }
 }
