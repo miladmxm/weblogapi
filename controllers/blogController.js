@@ -66,6 +66,7 @@ exports.singlePost = async (req, res, next) => {
         user: {
           profileImg: post.user.profileImg,
           bio: post.user.bio,
+          skill: post.user.skill,
           _id: post.user._id,
           fullname: post.user.fullname,
           emailAddress: post.user.emailAddress,
@@ -74,8 +75,6 @@ exports.singlePost = async (req, res, next) => {
           whatsapp: post.user.whatsapp,
         }
       }
-
-    console.log(filterpost);
     res.status(200).json({ post:filterpost })
 
   } catch (err) {

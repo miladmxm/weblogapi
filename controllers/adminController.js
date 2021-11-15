@@ -8,6 +8,7 @@ const fetch = require("node-fetch");
 const Blog = require("../models/blog");
 const User = require("../models/user");
 const { fullDate } = require("../utils/fullDate");
+const { sendEmail } = require("../utils/mailer");
 
 exports.getPost = async (req, res, next) => {
   const id = req.params.id;
@@ -116,7 +117,7 @@ exports.editPost = async (req, res, next) => {
           thumbnail: { name: "vs", size: 0, mimetype: "image/jpeg" },
         });
       }
-  
+
       if (post && post.user.toString() === req.userId || post && req.userId === isAdmin._id.toString()) {
         if (thumbnail.name) {
           fs.unlink(
@@ -145,7 +146,7 @@ exports.editPost = async (req, res, next) => {
             }
           );
         }
-  
+
         const { title, body, status, category } = req.body;
         post.title = title;
         post.body = body;
@@ -257,9 +258,9 @@ exports.uploadImage = async (req, res, next) => {
 exports.getAllImgUser = async (req, res) => {
   const user = await User.findOne({ _id: req.userId });
 
-    if (!user || user == null) {
-      return res.status(401).json({ message: "کاربری یافت نشد" });
-    }
+  if (!user || user == null) {
+    return res.status(401).json({ message: "کاربری یافت نشد" });
+  }
   const email = req.params.email;
   const allFile = [];
   fs.readdir(`${appRoot}/public/uploads/image/${email}/`, (err, files) => {
@@ -283,11 +284,11 @@ exports.editProfile = async (req, res, next) => {
   const { password, newPassword, newRePassword, bio, skill, social } = req.body;
   const id = req.params.id
   const socialmedia = social.split(',')
-  const profileimg = req.files ? req.files.profile : false;
+  const profileImg = req.files ? req.files.profile : false;
   try {
     const userEditor = await User.findOne({ _id: req.userId });
-    const user = await User.findOne({ _id: id});
-    if(!user || !userEditor.isAdmin){
+    const user = await User.findOne({ _id: id });
+    if (!user || !userEditor.isAdmin) {
       if (!user || user._id.toString() !== req.userId) {
         const error = new Error("کاربری با این شناسه وجود ندارد");
         error.statusCode = 400;
@@ -300,27 +301,27 @@ exports.editProfile = async (req, res, next) => {
       throw error;
     }
     let isEcual;
-    if(userEditor.isAdmin){
-      isEcual =await bcrypt.compare(password, userEditor.password);
-    }else{
-      isEcual =await bcrypt.compare(password, user.password);
+    if (userEditor.isAdmin) {
+      isEcual = await bcrypt.compare(password, userEditor.password);
+    } else {
+      isEcual = await bcrypt.compare(password, user.password);
     }
     if (!isEcual) {
       const error = new Error("کلمه عبور صحیح نیست");
       error.statusCode = 422;
       throw error;
-    } else if (!profileimg && !newPassword && !bio && !skill && social.length <= 3) {
+    } else if (!profileImg && !newPassword && !bio && !skill && social.length <= 3) {
       res.status(400).json({
         message: "برای تنظیمات پروفایل خود حداقل یک مورد را تغییر دهید",
       });
     }
 
     if (
-      (profileimg && profileimg.mimetype == "image/jpeg") ||
-      (profileimg.mimetype == "image/png" && profileimg.size < 4000000)
+      (profileImg && profileImg.mimetype == "image/jpeg") ||
+      (profileImg.mimetype == "image/png" && profileImg.size < 4000000)
     ) {
-      const fileName = `userprofile_${profileimg.name}`;
-      await sharp(profileimg.data)
+      const fileName = `userprofile_${profileImg.name}`;
+      await sharp(profileImg.data)
         .resize(200)
         .toFile(`./public/uploads/image/${user.email}/${fileName}`)
         .catch((err) => {
@@ -330,7 +331,7 @@ exports.editProfile = async (req, res, next) => {
             throw error;
           }
         });
-      user.profileImg = profileimg
+      user.profileImg = profileImg
         ? `${user.email}/${fileName}`
         : user.profileImg;
     }
@@ -428,7 +429,6 @@ exports.deleteUserReq = async (req, res, next) => {
 
           await Blog.deleteMany({ user: user._id.toString() }, err => {
             if (err) {
-              console.log(err);
               const error = new Error('در حذف پست ها مشکلی رخ داد');
               error.statusCode = 500;
               throw Error
@@ -444,7 +444,6 @@ exports.deleteUserReq = async (req, res, next) => {
           )
           await User.deleteOne({ email }, err => {
             if (err) {
-              console.log(err);
               const error = new Error('مشکلی در حذف کاربر رخ داد');
               error.statusCode = 500;
               throw Error
@@ -488,7 +487,6 @@ exports.deleteUserByAdmin = async (req, res, next) => {
 
         await Blog.deleteMany({ user: user._id.toString() }, err => {
           if (err) {
-            console.log(err);
             const error = new Error('در حذف پست ها مشکلی رخ داد');
             error.statusCode = 500;
             throw Error
@@ -504,7 +502,6 @@ exports.deleteUserByAdmin = async (req, res, next) => {
         )
         await User.deleteOne({ email: user.email }, err => {
           if (err) {
-            console.log(err);
             const error = new Error('مشکلی در حذف کاربر رخ داد');
             error.statusCode = 500;
             throw Error
@@ -528,4 +525,87 @@ exports.deleteUserByAdmin = async (req, res, next) => {
   } catch (err) {
     next(err)
   }
+}
+
+
+exports.addUser = async (req, res, next) => {
+  console.table(req.body)
+  const profileImg = req.files?req.files.profileImg:false
+  const { isAdmin, fullname, password, bio, skill, email, emailAddress, whatsapp, instagram, phoneNumber } = req.body
+  try {
+    await User.userValidation(req.body);
+    const isUser = await User.findOne({ email })
+    if (isUser) {
+      const error = new Error("کاربر با این ایمیل موجود است")
+      error.statusCode = 422
+      throw error
+    }
+
+    const userInfo = {
+      fullname,
+      email,
+      password,
+      bio,
+      skill,
+      emailAddress,
+      whatsapp,
+      instagram,
+      phoneNumber,
+      isAdmin
+    }
+
+
+    const readUserUnicFolder = fs.existsSync(
+      `${appRoot}/public/uploads/image/${email}`
+    );
+    if (!readUserUnicFolder) {
+      fs.mkdirSync(`${appRoot}/public/uploads/image/${email}`);
+    }
+
+    if (
+      (profileImg && profileImg.mimetype == "image/jpeg") && profileImg.size < 4000000 ||
+      (profileImg && profileImg.mimetype == "image/png" && profileImg.size < 4000000)
+    ) {
+      const fileName = `userprofile_${profileImg.name}`;
+      await sharp(profileImg.data)
+        .resize(200)
+        .toFile(`./public/uploads/image/${email}/${fileName}`)
+        .catch((err) => {
+          if (err) {
+            const error = new Error("مشکلی در ذخیره تصویر پروفایل بوجود آمده");
+            error.statusCode = 400;
+            throw error;
+          }
+        });
+        
+        userInfo.profileImg = `${email}/${fileName}`
+        
+    }
+    await User.create(userInfo);
+    sendEmail(
+      email,
+      "ثبت نام موفقیت آمیز بود",
+      `
+    <div style="width:95%; margin:auto; text-align:center;"
+      <h1>سلام ${fullname}</h1>
+      <h3>ثبت نام شما در وبسایت ما با موفقیت انجام شد امیدوارم از مطالب مفید شما لذت ببریم</h3>
+      <a href="http://miladmxm.ir/">miladmxm</a>
+      </div>
+    `
+    );
+    res.status(201).json({ message: "ثبت نام با موفقیت انجام شد" });
+
+  } catch (err) {
+    const errors = [];
+    if (err.name === "ValidationError") {
+      err.inner.forEach((e) => {
+        errors.push({ message: e.message, fildname: e.path });
+      });
+      err.statusCode = 422;
+      err.message = "خطای اعتبار سنجی";
+      err.data = errors;
+    }
+    next(err);
+  }
+
 }

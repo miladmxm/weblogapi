@@ -1,6 +1,6 @@
 const {Router} = require('express');
 const adminController = require('../controllers/adminController');
-const {authenticated} = require('../middlewares/auth');
+const {authenticated, authenticatedAdmin} = require('../middlewares/auth');
 const router = new Router()
 
 
@@ -44,5 +44,8 @@ router.post('/delete-user/:token', authenticated, adminController.deleteUserReq)
 // @desc post /dashboard/image-upload
 router.get('/all-image-user/:email',authenticated,adminController.getAllImgUser)
 
+// @desc add user handler
+// @desc post /dashboard/add-user
+router.post('/add-user', authenticatedAdmin, adminController.addUser)
 
 module.exports = router
