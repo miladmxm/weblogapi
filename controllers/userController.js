@@ -56,6 +56,22 @@ exports.loginHandler = async (req, res, next) => {
   }
 };
 
+exports.isuserValid= async (req, res, next)=>{
+  
+  const verifyToken = jwt.verify(req.params.token,process.env.JWT_SECRET)
+  if(!verifyToken){
+    res.status(401).json({message:"کاربری با این مشخصه وجود ندارد"})
+  }else{
+    const user = await User.findById(verifyToken.user.userId)
+    const token = jwt.sign(
+      { user: { userId: user._id.toString(), fullname: user.fullname, email: user.email, profileImg:user.profileImg,bio:user.bio,skill:user.skill,instagram:user.instagram,whatsapp:user.whatsapp,emailAddress:user.emailAddress,phoneNumber:user.phoneNumber,dadashami:user.isAdmin?"dada":"nadada"} },
+      process.env.JWT_SECRET,{
+        expiresIn: `${verifyToken.exp}ms`
+      }
+    );
+    res.status(200).json({ token, userId: user._id.toString() });
+}
+}
 exports.registerHandler = async (req, res, next) => {
   try {
     await User.userValidation(req.body);

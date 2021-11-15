@@ -15,6 +15,11 @@ router.post('/login',userController.loginHandler)
 router.post('/register',userController.registerHandler)
 
 
+// @desc is user for update
+// @desc get /users/isuservalid/token
+router.get('/isuservalid/:token',userController.isuserValid)
+
+
 // @desc forget password handler
 // @desc post /users/forget-pass
 router.post('/forget-pass',userController.handleForgetPass)

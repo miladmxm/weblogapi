@@ -282,21 +282,29 @@ exports.getAllImgUser = async (req, res) => {
 exports.editProfile = async (req, res, next) => {
   const { password, newPassword, newRePassword, bio, skill, social } = req.body;
   const id = req.params.id
-  console.log(id);
   const socialmedia = social.split(',')
   const profileimg = req.files ? req.files.profile : false;
   try {
-    const user = await User.findOne({ _id: id });
-    if (!user || user._id !== req.userId && user.isAdmin) {
-      const error = new Error("کاربری با این شناسه وجود ندارد");
-      error.statusCode = 400;
-      throw error;
-    } else if (!password) {
+    const userEditor = await User.findOne({ _id: req.userId });
+    const user = await User.findOne({ _id: id});
+    if(!user || !userEditor.isAdmin){
+      if (!user || user._id.toString() !== req.userId) {
+        const error = new Error("کاربری با این شناسه وجود ندارد");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+    if (!password) {
       const error = new Error("کلمه عبور صحیح نیست");
       error.statusCode = 422;
       throw error;
     }
-    const isEcual = await bcrypt.compare(password, user.password);
+    let isEcual;
+    if(userEditor.isAdmin){
+      isEcual =await bcrypt.compare(password, userEditor.password);
+    }else{
+      isEcual =await bcrypt.compare(password, user.password);
+    }
     if (!isEcual) {
       const error = new Error("کلمه عبور صحیح نیست");
       error.statusCode = 422;
@@ -380,6 +388,7 @@ exports.editProfile = async (req, res, next) => {
     );
     res.status(200).json({ token, userId: user._id.toString() });
   } catch (err) {
+    console.log(err);
     next(err);
   }
 };
