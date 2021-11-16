@@ -13,8 +13,8 @@ router.get('/get-all-user', authenticated, adminController.getAllUsers)
 router.get('/:id',authenticated,adminController.getPost)
 
 // @desc delete user handler
-// @desc delete /dashboard/delete-post-by-admin/3546354asdfsdh52
-router.delete('/delete-user-by-admin/:id', authenticated, adminController.deleteUserByAdmin)
+// @desc post /dashboard/delete-post-by-admin/3546354asdfsdh52
+router.post('/delete-user-by-admin/:id', authenticated, adminController.deleteUserByAdmin)
 
 // @desc delete post handler
 // @desc delete /dashboard/delete-post/3546354asdfsdh52

@@ -47,7 +47,7 @@ exports.getAllUsers = async (req, res, next) => {
   try {
     const isAdmin = await User.findOne({ _id: req.userId, isAdmin: true });
     if (isAdmin) {
-      const allUser = await User.find()
+      const allUser = await User.find().sort({ createdAt: "desc" })
       if (allUser) {
         res.status(200).json({ allUser });
       }
@@ -477,38 +477,96 @@ exports.deleteUserReq = async (req, res, next) => {
   }
 }
 exports.deleteUserByAdmin = async (req, res, next) => {
+  const moveData = req.body.moveData
   const id = req.params.id;
   try {
     const isAdmin = await User.findOne({ _id: req.userId, isAdmin: true });
     if (isAdmin && req.userId === isAdmin._id.toString()) {
       const user = await User.findOne({ _id: id })
+      const currentUser = await User.findOne({ _id: req.userId })
       if (user) {
         if (user._id == req.userId) {
           const error = new Error('شما نمیتوانید خودتون رو پاک کنید');
           error.statusCode = 422
           throw error;
         }
-
         const posts = await Blog.find({ user: user._id.toString() })
-        posts.map(f => {
-          fs.unlinkSync(`${appRoot}/public/uploads/thumbnails/${f.thumbnail}`);
-        })
+       
+        
+        if (!moveData) {
+          if (posts) {
 
-        await Blog.deleteMany({ user: user._id.toString() }, err => {
-          if (err) {
-            const error = new Error('در حذف پست ها مشکلی رخ داد');
-            error.statusCode = 500;
-            throw Error
+            posts.map(f => {
+              fs.unlinkSync(`${appRoot}/public/uploads/thumbnails/${f.thumbnail}`);
+            })
+
+            await Blog.deleteMany({ user: user._id.toString() }, err => {
+              if (err) {
+                const error = new Error('در حذف پست ها مشکلی رخ داد');
+                error.statusCode = 500;
+                throw Error
+              }
+            })
           }
-        })
-        fs.rmdir(`${appRoot}/public/uploads/image/${user.email}`, { recursive: true }, (err) => {
-          if (err) {
-            const error = new Error('در حذف تصاویر مشکلی رخ داد');
-            error.statusCode = 500;
-            throw Error
+          fs.rmdir(`${appRoot}/public/uploads/image/${user.email}`, { recursive: true }, (err) => {
+            if (err) {
+              const error = new Error('در حذف تصاویر مشکلی رخ داد');
+              error.statusCode = 500;
+              throw Error
+            }
           }
+          )
+        } else {
+          await Blog.updateMany({ user: user._id.toString() }, { user: currentUser._id }, function (err) {
+            if (err) {
+              console.log(err);
+            }
+          })
+
+        //  await Blog.find({ user: user._id.toString() }, function(err, post){
+        //    if (err) {
+        //      console.log(err);
+        //      throw err
+        //    }
+        //    post
+        // })
+
+
+
+        //   if (posts != []) {
+        //     await Blog.updateMany({ user: user._id.toString() }, {
+        //       '$set': {
+        //         "post.user": currentUser._id
+        //       }
+        //     })
+           
+        //   }
+
+          fs.readdir(`${appRoot}/public/uploads/image/${user.email}/`, (err, files) => {
+            if (err) {
+              const error = new Error("مشکلی در گرفتن تصاویر وجود دارد")
+              error.statusCode = 400;
+              throw error
+            }
+            if (typeof files != "undefined") {
+              files.forEach((file) => {
+
+                const currentPath = `${appRoot}/public/uploads/image/${user.email}/${file}`;
+                const destinationPath = `${appRoot}/public/uploads/image/${currentUser.email}/${file}`
+
+                fs.rename(currentPath, destinationPath, function (err) {
+                  if (err) {
+                    const error = new Error("مشکلی در انتقال تصاویر وجود دارد")
+                    error.statusCode = 400;
+                    throw error
+                  }
+                });
+              });
+
+            }
+          });
         }
-        )
+
         await User.deleteOne({ email: user.email }, err => {
           if (err) {
             const error = new Error('مشکلی در حذف کاربر رخ داد');
@@ -532,6 +590,7 @@ exports.deleteUserByAdmin = async (req, res, next) => {
     }
 
   } catch (err) {
+    console.log('in errror'+err);
     next(err)
   }
 }

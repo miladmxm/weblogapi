@@ -63,8 +63,9 @@ exports.isuserValid= async (req, res, next)=>{
     res.status(401).json({message:"کاربری با این مشخصه وجود ندارد"})
   }else{
     const user = await User.findById(verifyToken.user.userId)
-    if (!user) {
-      res.status(401).json({message:"کاربری با این مشخصه وجود ندارد"})
+    console.log(user);
+    if (!user || user == null) {
+      return res.status(401).json({message:"کاربری با این مشخصه وجود ندارد"})
     }
     const token = jwt.sign(
       { user: { userId: user._id.toString(), fullname: user.fullname, email: user.email, profileImg:user.profileImg,bio:user.bio,skill:user.skill,instagram:user.instagram,whatsapp:user.whatsapp,emailAddress:user.emailAddress,phoneNumber:user.phoneNumber,dadashami:user.isAdmin?"dada":"nadada"} },
