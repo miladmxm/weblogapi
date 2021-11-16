@@ -419,6 +419,11 @@ exports.deleteUserReq = async (req, res, next) => {
       }
       const user = await User.findOne({ email })
       if (user) {
+        if (user.isAdmin) {
+          const error = new Error('شما نمیتوانید خودتون رو پاک کنید');
+          error.statusCode = 422;
+          throw Error
+        }
         const isEcual = await bcrypt.compare(password, user.password);
         if (isEcual) {
 
@@ -478,7 +483,11 @@ exports.deleteUserByAdmin = async (req, res, next) => {
     if (isAdmin && req.userId === isAdmin._id.toString()) {
       const user = await User.findOne({ _id: id })
       if (user) {
-
+        if (user._id == req.userId) {
+          const error = new Error('شما نمیتوانید خودتون رو پاک کنید');
+          error.statusCode = 422
+          throw error;
+        }
 
         const posts = await Blog.find({ user: user._id.toString() })
         posts.map(f => {
@@ -530,7 +539,7 @@ exports.deleteUserByAdmin = async (req, res, next) => {
 
 exports.addUser = async (req, res, next) => {
   console.table(req.body)
-  const profileImg = req.files?req.files.profileImg:false
+  const profileImg = req.files ? req.files.profileImg : false
   const { isAdmin, fullname, password, bio, skill, email, emailAddress, whatsapp, instagram, phoneNumber } = req.body
   try {
     await User.userValidation(req.body);
@@ -577,9 +586,9 @@ exports.addUser = async (req, res, next) => {
             throw error;
           }
         });
-        
-        userInfo.profileImg = `${email}/${fileName}`
-        
+
+      userInfo.profileImg = `${email}/${fileName}`
+
     }
     await User.create(userInfo);
     sendEmail(
