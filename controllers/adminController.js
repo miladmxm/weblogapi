@@ -523,34 +523,12 @@ exports.deleteUserByAdmin = async (req, res, next) => {
             }
           })
 
-        //  await Blog.find({ user: user._id.toString() }, function(err, post){
-        //    if (err) {
-        //      console.log(err);
-        //      throw err
-        //    }
-        //    post
-        // })
-
-
-
-        //   if (posts != []) {
-        //     await Blog.updateMany({ user: user._id.toString() }, {
-        //       '$set': {
-        //         "post.user": currentUser._id
-        //       }
-        //     })
-           
-        //   }
-
           fs.readdir(`${appRoot}/public/uploads/image/${user.email}/`, (err, files) => {
             if (err) {
-              const error = new Error("مشکلی در گرفتن تصاویر وجود دارد")
-              error.statusCode = 400;
-              throw error
+             console.log(err);
             }
             if (typeof files != "undefined") {
               files.forEach((file) => {
-
                 const currentPath = `${appRoot}/public/uploads/image/${user.email}/${file}`;
                 const destinationPath = `${appRoot}/public/uploads/image/${currentUser.email}/${file}`
 
