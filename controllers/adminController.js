@@ -63,7 +63,7 @@ exports.getAllUsers = async (req, res, next) => {
 
 exports.createPost = async (req, res, next) => {
   const thumbnail = req.files ? req.files.thumbnail : {};
-  const fileName = `${fullDate()}_${thumbnail.name}`;
+  const fileName = `${fullDate()}_${thumbnail.name}.webp`;
   const uploadPath = `${appRoot}/public/uploads/thumbnails/${fileName}`;
   try {
     const user = await User.findOne({ _id: req.userId });
@@ -73,8 +73,8 @@ exports.createPost = async (req, res, next) => {
       await Blog.postValidation(req.body);
 
       await sharp(thumbnail.data)
-        .jpeg({
-          quality: 60,
+        .webp({
+          quality: 30,
         })
         .toFile(uploadPath)
         .catch((err) => console.log(err));
@@ -102,7 +102,7 @@ exports.createPost = async (req, res, next) => {
 
 exports.editPost = async (req, res, next) => {
   const thumbnail = req.files ? req.files.thumbnail : {};
-  const fileName = `${fullDate()}_${thumbnail.name}`;
+  const fileName = `${fullDate()}_${thumbnail.name}.webp`;
   const uploadPath = `${appRoot}/public/uploads/thumbnails/${fileName}`;
   const isAdmin = await User.findOne({ _id: req.userId, isAdmin: true });
 
@@ -131,7 +131,7 @@ exports.editPost = async (req, res, next) => {
                 throw error;
               } else {
                 await sharp(thumbnail.data)
-                  .jpeg({ quality: 60 })
+                  .webp({ quality: 30 })
                   .toFile(uploadPath)
                   .catch((err) => {
                     if (err) {
@@ -234,10 +234,10 @@ exports.uploadImage = async (req, res, next) => {
       (image && image.mimetype == "image/jpeg") ||
       (image.mimetype == "image/png" && image.size < 4000000)
     ) {
-      const fileName = `${fullDate()}_${image.name}`;
+      const fileName = `${fullDate()}_${image.name}.webp`;
       await sharp(image.data)
-        .jpeg({
-          quality: 60,
+        .webp({
+          quality: 30,
         })
         .toFile(`./public/uploads/image/${user.email}/${fileName}`);
       res.status(200).json({
