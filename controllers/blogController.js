@@ -24,6 +24,7 @@ exports.getIndex = async (req, res, next) => {
         title: post.title,
         body: post.body,
         thumbnail: post.thumbnail,
+        createdAt:post.createdAt,
         user: {
           profileImg: post.user.profileImg,
           bio: post.user.bio,
@@ -63,6 +64,7 @@ exports.singlePost = async (req, res, next) => {
         title: post.title,
         body: post.body,
         thumbnail: post.thumbnail,
+        createdAt:post.createdAt,
         user: {
           profileImg: post.user.profileImg,
           bio: post.user.bio,
