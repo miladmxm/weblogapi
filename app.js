@@ -2,7 +2,7 @@ const path = require('path');
 
 const express = require('express');
 const fileUpload = require('express-fileupload');
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
 const dotEnv = require('dotenv');
 const helmet = require('helmet');
 
